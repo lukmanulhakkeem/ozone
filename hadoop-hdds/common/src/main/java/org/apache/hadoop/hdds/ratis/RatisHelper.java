@@ -30,6 +30,7 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import com.google.common.annotations.VisibleForTesting;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hdds.StringUtils;
 import org.apache.hadoop.hdds.conf.ConfigurationSource;
 import org.apache.hadoop.hdds.conf.OzoneConfiguration;
@@ -42,6 +43,7 @@ import org.apache.hadoop.hdds.scm.pipeline.Pipeline;
 import org.apache.hadoop.hdds.security.SecurityConfig;
 
 import org.apache.hadoop.hdfs.DFSConfigKeys;
+import org.apache.hadoop.ozone.OzoneConfigKeys;
 import org.apache.ratis.RaftConfigKeys;
 import org.apache.ratis.client.RaftClient;
 import org.apache.ratis.client.RaftClientConfigKeys;
@@ -118,9 +120,16 @@ public final class RatisHelper {
   public static UUID toDatanodeId(RaftProtos.RaftPeerProto peerId) {
     return toDatanodeId(RaftPeerId.valueOf(peerId.getId()));
   }
+  public static void setExternalConfiguration(Configuration externalConfig) {
+    CONF.clear(); // Clear existing configurations
+    CONF.addResource(externalConfig); // Add external configuration
+  }
 
+  public static OzoneConfiguration getConfiguration() {
+    return CONF;
+  }
   private static String toRaftPeerAddress(DatanodeDetails id, Port.Name port) {
-    if (datanodeUseHostName()) {
+    if (datanodeUseHostName(getConfiguration())) {
       final String address =
               id.getHostName() + ":" + id.getPort(port).getValue();
       LOG.debug("Datanode is using hostname for raft peer address: {}",
@@ -434,10 +443,9 @@ public final class RatisHelper {
         .min(Long::compareTo).orElse(null);
   }
 
-  private static boolean datanodeUseHostName() {
-    return CONF.getBoolean(
-            DFSConfigKeys.DFS_DATANODE_USE_DN_HOSTNAME,
-            DFSConfigKeys.DFS_DATANODE_USE_DN_HOSTNAME_DEFAULT);
+  private static boolean datanodeUseHostName(OzoneConfiguration conf) {
+    return conf.getBoolean(
+            OzoneConfigKeys.OZONE_USE_HOSTNAME,OzoneConfigKeys.OZONE_USE_HOSTNAME_DEFAULT);
   }
 
   private static <U> Class<? extends U> getClass(String name,
