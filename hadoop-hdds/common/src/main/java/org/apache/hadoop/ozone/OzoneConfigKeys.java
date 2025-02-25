@@ -245,6 +245,8 @@ public final class OzoneConfigKeys {
   public static final int OZONE_CLIENT_SOCKET_TIMEOUT_DEFAULT = 5000;
   public static final String OZONE_CLIENT_CONNECTION_TIMEOUT =
       "ozone.client.connection.timeout";
+  public static final String OZONE_USE_HOSTNAME = "ozone.use.hostname";
+  public static final boolean OZONE_USE_HOSTNAME_DEFAULT = false;
   public static final int OZONE_CLIENT_CONNECTION_TIMEOUT_DEFAULT = 5000;
 
   public static final String OZONE_REPLICATION = "ozone.replication";

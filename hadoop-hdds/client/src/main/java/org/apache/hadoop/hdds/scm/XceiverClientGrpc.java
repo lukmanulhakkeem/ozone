@@ -41,6 +41,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import org.apache.hadoop.hdds.HddsUtils;
 import org.apache.hadoop.hdds.conf.ConfigurationSource;
+import org.apache.hadoop.hdds.conf.OzoneConfiguration;
 import org.apache.hadoop.hdds.protocol.DatanodeDetails;
 import org.apache.hadoop.hdds.protocol.datanode.proto.ContainerProtos;
 import org.apache.hadoop.hdds.protocol.datanode.proto.ContainerProtos.ContainerCommandRequestProto;
@@ -50,6 +51,7 @@ import org.apache.hadoop.hdds.protocol.datanode.proto.XceiverClientProtocolServi
 import org.apache.hadoop.hdds.protocol.datanode.proto.XceiverClientProtocolServiceGrpc.XceiverClientProtocolServiceStub;
 import org.apache.hadoop.hdds.protocol.proto.HddsProtos;
 import org.apache.hadoop.hdds.protocol.proto.HddsProtos.NodeOperationalState;
+import org.apache.hadoop.hdds.ratis.RatisHelper;
 import org.apache.hadoop.hdds.scm.client.ClientTrustManager;
 import org.apache.hadoop.hdds.scm.client.HddsClientUtils;
 import org.apache.hadoop.hdds.scm.pipeline.Pipeline;
@@ -90,6 +92,7 @@ public class XceiverClientGrpc extends XceiverClientSpi {
   private final Map<UUID, XceiverClientProtocolServiceStub> asyncStubs;
   private final XceiverClientMetrics metrics;
   private final Map<UUID, ManagedChannel> channels;
+  private static final OzoneConfiguration CONF = RatisHelper.getConfiguration();
   private final Semaphore semaphore;
   private long timeout;
   private final SecurityConfig secConfig;
@@ -183,8 +186,11 @@ public class XceiverClientGrpc extends XceiverClientSpi {
 
   protected NettyChannelBuilder createChannel(DatanodeDetails dn, int port)
       throws IOException {
+    String hostOrIp = CONF.getBoolean(OzoneConfigKeys.OZONE_USE_HOSTNAME, OzoneConfigKeys.OZONE_USE_HOSTNAME_DEFAULT)
+        ? dn.getHostName()
+        : dn.getIpAddress();
     NettyChannelBuilder channelBuilder =
-        NettyChannelBuilder.forAddress(dn.getIpAddress(), port).usePlaintext()
+        NettyChannelBuilder.forAddress(hostOrIp, port).usePlaintext()
             .maxInboundMessageSize(OzoneConsts.OZONE_SCM_CHUNK_MAX_SIZE)
             .proxyDetector(uri -> null)
             .intercept(new GrpcClientInterceptor());
